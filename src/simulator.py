@@ -1,8 +1,8 @@
 from pathlib import Path
 import time
 
-import mujoco as m
-import mujoco.viewer
+import mujoco as m # type: ignore
+import mujoco.viewer # type: ignore
 
 
 class LampSimulator:
@@ -12,7 +12,7 @@ class LampSimulator:
         self.model = m.MjModel.from_xml_path(str(urdf_path))
         self.data = m.MjData(self.model)
 
-        self.viewer = m.viewer.launch_passive(self.model, self.data)
+        self.viewer = mujoco.viewer.launch_passive(self.model, self.data, show_left_ui=False, show_right_ui=False)
 
         self.joints = {}
 

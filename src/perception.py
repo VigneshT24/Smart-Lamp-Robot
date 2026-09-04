@@ -1,6 +1,6 @@
-import cv2
-import numpy as np
-import sounddevice as sd
+import cv2 # type: ignore
+import numpy as np # type: ignore
+import sounddevice as sd # type: ignore
 
 
 class Perception:
@@ -38,8 +38,24 @@ class Perception:
 
         return len(faces) > 0
 
+    def get_frame(self):
+        success, frame = self.camera.read()
+
+        if not success:
+            return None
+
+        return frame
+
     def human_speaking(self):
         return self.audio_level > 0.015
+
+    def pause_audio(self):
+        self.audio_stream.stop()
+        self.audio_level = 0.0
+
+    def resume_audio(self):
+        self.audio_level = 0.0
+        self.audio_stream.start()
 
     def close(self):
         self.camera.release()
