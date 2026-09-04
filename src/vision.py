@@ -11,7 +11,7 @@ class VisionAgent:
         self.memory = {}
 
     def observe(self, frame):
-        # convert OpenCV frame to jpeg bytes
+        # convert opencv frame to jpeg bytes
         success, encoded = cv2.imencode(".jpg", frame)
 
         if not success:
@@ -64,11 +64,11 @@ class VisionAgent:
             if not name:
                 continue
 
-            # Only count it as new if we haven't seen this name before
+            # only count it as new if we haven't seen this name before
             if name not in self.memory:
                 newly_added.append(obj)
 
-            # Still update stored details
+            # still update stored details
             existing = self.memory.get(name, {})
             self.memory[name] = {**existing, **obj}
 
