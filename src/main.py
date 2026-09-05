@@ -1,4 +1,6 @@
 import time 
+import json
+from google.genai.errors import ServerError # type: ignore
 
 from simulator import LampSimulator
 from perception import Perception
@@ -104,16 +106,18 @@ try:
 
                 transcript_lower = result["transcript"].lower() if result else ""
 
-                light_on_request = "turn on" in transcript_lower
-                light_off_request = "turn off" in transcript_lower
+                light_on_request = any(phrase in transcript_lower for phrase in ["turn on the light", "turn the light on"])
+
+                light_off_request = any(phrase in transcript_lower for phrase in ["turn off the light", "turn the light off"])
 
                 goal_request = any(phrase in transcript_lower for phrase in ["look at", "look toward", "look to",
-                                                                             "turn toward", "turn to", "face the", "nod"])
+                                                                             "turn toward", "turn to", "face the"])
 
                 vision_request = any(phrase in transcript_lower for phrase in ["what do you see", "remember this", "remember that", "what is this",])
 
                 if light_on_request:
                     response_text = "Sure, I will turn on the light"
+                    light_stay_off = False
                     lamp.set_light(True)
                 elif light_off_request:
                     response_text = "Sure, I will turn off the light"
@@ -172,7 +176,7 @@ try:
                             for obj in verified_scene:
                                 name = obj.get("name", "").strip().lower()
 
-                                if target in name or name in target:
+                                if target and (target in name or name in target):
                                     verified = True
                                     break
 
@@ -192,6 +196,18 @@ try:
 
                 speech.speak(response_text)
                 time.sleep(0.5)
+
+            except ServerError:
+                print("Gemini unavailable after retries.")
+                speech.speak("I'm having trouble connecting right now. Please try again.")
+
+            except json.JSONDecodeError:
+                print("Gemini returned invalid JSON.")
+                speech.speak("I didn't understand that cleanly. Could you try again?")
+
+            except Exception as e:
+                print("Interaction error:", e)
+                speech.speak("Something went wrong. Please try that again.")
 
             finally:
                 percep.resume_audio()
