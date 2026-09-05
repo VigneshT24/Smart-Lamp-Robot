@@ -34,12 +34,20 @@ LISTEN = {
     "head_pitch_joint": -0.25,
 }
 
+lamp.set_light(False)
+
 lamp.move_pose(NEUTRAL, 0.5)
 time.sleep(1)
 lamp.move_pose(GREET, 0.5)
 time.sleep(1)
 lamp.move_pose(LISTEN, 0.5)
 time.sleep(1)
+
+lamp.set_light(True)
+time.sleep(2)
+
+lamp.set_light(False)
+time.sleep(2)
 
 input("Press Enter to exit...")
 lamp.close()

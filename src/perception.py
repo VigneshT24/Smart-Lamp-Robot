@@ -9,6 +9,8 @@ class Perception:
 
         self.face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
+        self.eye_detector = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye_tree_eyeglasses.xml")
+
         self.audio_level = 0.0
 
         self.audio_stream = sd.InputStream(
@@ -21,7 +23,7 @@ class Perception:
     def _audio_callback(self, indata, frames, time, status):
         self.audio_level = np.sqrt(np.mean(indata ** 2))
 
-    def person_present(self):
+    def person_attending(self):
         success, frame = self.camera.read()
 
         if not success:
@@ -29,14 +31,35 @@ class Perception:
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        faces = self.face_detector.detectMultiScale(
-            gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(80, 80),
-        )
+        faces = self.face_detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(80, 80))
 
-        return len(faces) > 0
+        attending = False
+
+        for (x, y, w, h) in faces:
+            face_gray = gray[y:y+h, x:x+w]
+
+            # only search roughly in upper part of face
+            eye_region = face_gray[0:int(h * 0.65), :]
+
+            eyes = self.eye_detector.detectMultiScale( eye_region, scaleFactor=1.1, minNeighbors=4, minSize=(20, 20),)
+
+            if len(eyes) >= 2:
+                attending = True
+                color = (0, 255, 0)
+            else:
+                color = (0, 0, 255)
+
+            # debug visualization
+            cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
+
+        status = "ATTENDING" if attending else "NOT ATTENDING"
+
+        cv2.putText(frame, status, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0) if attending else (0, 0, 255), 2)
+
+        cv2.imshow("Live Camera Feed", frame)
+        cv2.waitKey(1)
+
+        return attending
 
     def get_frame(self):
         success, frame = self.camera.read()
@@ -61,3 +84,4 @@ class Perception:
         self.camera.release()
         self.audio_stream.stop()
         self.audio_stream.close()
+        cv2.destroyAllWindows()
