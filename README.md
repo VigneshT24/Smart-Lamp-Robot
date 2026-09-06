@@ -244,12 +244,18 @@ Measurements observed during development on a CPU-only laptop:
 
 | Component | Observed latency |
 |---|---:|
-| Faster-Whisper transcription | ~0.4–0.5 s |
+| Faster-Whisper transcription | ~0.4-0.5 s |
 | Healthy Gemini text response | ~0.7 s observed |
-| Healthy multimodal goal planning | typically ~1–3 s |
+| Healthy multimodal goal planning | typically ~1-3 s |
 | Cloud timeout | bounded at ~10 s per attempted request |
+| Engagement detection | 10/10 successful trials |
+| Disengagement detection | 10/10 successful trials |
+| CPU usage | typically at ~3% |
+| Memory usage | typically at ~1.03 GB|
 
 Cloud latency has noticeably higher variance than the local pipeline; this is the main reason speech recognition and control were kept on-device.
+
+**NOTE**: Measurements were taken on a Windows 11 development machine with an Intel Core Ultra 7 356H and 16 GB RAM. CPU and memory values refer to the Python process while the application was running.
 
 ## Key Tradeoffs and Limitations
 
