@@ -8,6 +8,7 @@ from google.genai.errors import ServerError # type: ignore
 import numpy as np # type: ignore
 import sounddevice as sd # type: ignore
 import pyttsx3 # type: ignore
+from faster_whisper import WhisperModel # type: ignore
 
 from dotenv import load_dotenv # type: ignore
 from google import genai # type: ignore
@@ -21,9 +22,13 @@ class SpeechAgent:
         self.sample_rate = 16000
         self.threshold = 0.015
 
-        self.client = genai.Client(
-            api_key=os.getenv("GEMINI_API_KEY")
-        )
+        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+        print("Loading Whisper...")
+
+        self.whisper = WhisperModel("base.en", device="cpu", compute_type="int8")
+
+        print("Whisper ready.")
 
     def _generate_with_retry(self, **kwargs):
         for attempt in range(3):
@@ -92,6 +97,24 @@ class SpeechAgent:
 
         return buffer.getvalue()
 
+    def transcribe(self, audio):
+        start = time.perf_counter()
+
+        segments, _ = self.whisper.transcribe(
+            audio,
+            language="en",
+            beam_size=1,
+            best_of=1,
+            condition_on_previous_text=False,
+            vad_filter=False,
+        )
+
+        transcript = " ".join(segment.text.strip() for segment in segments).strip()
+
+        print(f"Whisper transcription: {time.perf_counter() - start:.2f}s")
+
+        return transcript
+
     def process_audio(self, audio_bytes, scene_memory=None):
         memory_text = json.dumps(scene_memory or [])
 
@@ -123,12 +146,49 @@ class SpeechAgent:
                     mime_type="audio/wav",
                 ),
             ],
+            config=types.GenerateContentConfig(
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
+            ),
         )
 
         text = response.text.strip() # type: ignore
         text = text.replace("```json", "").replace("```", "").strip()
 
         return json.loads(text)
+
+    def respond_to_text(self, transcript, scene_memory=None):
+        memory_text = json.dumps(scene_memory or [])
+
+        response = self._generate_with_retry(
+            model="gemini-3.5-flash-lite",
+            contents=f"""
+            You are an expressive desk lamp character.
+
+            The person said:
+            "{transcript}"
+
+            The lamp remembers these scene objects:
+            {memory_text}
+
+            Respond naturally and briefly.
+
+            If they ask about something previously seen,
+            use the scene memory.
+
+            Do not invent objects that are not in memory.
+
+            Respond in 1-2 short sentences.
+            Only return words that should be spoken aloud.
+            """,
+            config=types.GenerateContentConfig(
+                automatic_function_calling=
+                types.AutomaticFunctionCallingConfig(
+                    disable=True
+                )
+            ),
+        )
+
+        return response.text.strip() # type: ignore
 
     def speak(self, text):
         print("Lamp:", text)

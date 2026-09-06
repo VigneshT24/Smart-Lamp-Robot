@@ -1,6 +1,8 @@
 import json
 import time
+import cv2 # type: ignore
 from google.genai.errors import ServerError # type: ignore
+from google.genai import types # type: ignore
 
 class GoalPlanner:
     ALLOWED_ACTIONS = [
@@ -57,7 +59,11 @@ class GoalPlanner:
         Use at most 3 actions.
         """
 
-        response = self._generate_with_retry(model="gemini-3.5-flash-lite", contents=prompt)
+        response = self._generate_with_retry(model="gemini-3.5-flash-lite", contents=prompt,
+            config=types.GenerateContentConfig(
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
+            ),
+        )
 
         text = response.text.strip() # type: ignore
         text = text.replace("```json", "").replace("```", "").strip()
@@ -66,5 +72,84 @@ class GoalPlanner:
 
         # reject anything outside our action vocabulary
         result["actions"] = [action for action in result.get("actions", []) if action in self.ALLOWED_ACTIONS]
+
+        return result
+
+    def plan_from_frame(self, goal, frame):
+        # Small image is enough for rough object direction
+        frame = cv2.resize(frame, (480, 360))
+
+        success, encoded = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 65])
+
+        if not success:
+            return {
+                "actions": [],
+                "target": "",
+                "reason": "Could not encode camera frame."
+            }
+
+        image_bytes = encoded.tobytes()
+
+        prompt = f"""
+            You control an articulated desk lamp robot.
+
+            The user said:
+            "{goal}"
+
+            Look at the attached live camera image.
+
+            Find the object the user is referring to and determine
+            approximately where it is in the image.
+
+            You may ONLY choose from:
+            {self.ALLOWED_ACTIONS}
+
+            Use:
+            left -> LOOK_LEFT
+            right -> LOOK_RIGHT
+            center -> LOOK_CENTER
+            upper left -> LOOK_UPPER_LEFT
+            upper right -> LOOK_UPPER_RIGHT
+            lower left -> LOOK_LOWER_LEFT
+            lower right -> LOOK_LOWER_RIGHT
+
+            Return ONLY valid JSON:
+
+            {{
+                "actions": ["LOOK_LEFT"],
+                "target": "red bottle",
+                "reason": "The red bottle is on the left."
+            }}
+
+            Prefer ONE action unless more are truly necessary.
+        """
+
+        response = self._generate_with_retry(
+            model="gemini-3.5-flash-lite",
+            contents=[
+                prompt,
+                types.Part.from_bytes(
+                    data=image_bytes,
+                    mime_type="image/jpeg"
+                ),
+            ],
+            config=types.GenerateContentConfig(
+                automatic_function_calling=
+                types.AutomaticFunctionCallingConfig(
+                    disable=True
+                )
+            ),
+        )
+
+        text = response.text.strip() # type: ignore
+        text = text.replace("```json", "").replace("```", "").strip()
+
+        result = json.loads(text)
+
+        result["actions"] = [
+            action
+            for action in result.get("actions", [])
+            if action in self.ALLOWED_ACTIONS
+        ]
 
         return result

@@ -71,6 +71,8 @@ try:
 
         speaking = percep.human_speaking()
 
+        print(f"audio={percep.audio_level:.4f} " f"speaking={speaking} " f"state={state}")
+
         if person_gone:
             lamp.set_light(False)
             if state != "neutral":
@@ -85,26 +87,25 @@ try:
             audio_ctrl.play_chime()
             percep.resume_audio()
             state = "greet"
-        elif person_confirmed  and speaking and state != "listen":
+        elif state == "greet" and speaking:
             if not light_stay_off:
                 lamp.set_light(True)
             print("Person Speaking, Therefore Listen")
             lamp.move_pose(LISTEN, 0.30)
             state = "listen"
 
-            percep.pause_audio()
-
-            result = {}
-
             try:
-                audio = speech.listen()
+                audio = percep.capture_utterance()
 
-                if audio:
-                    result = speech.process_audio(audio, vision.get_memory())
+                percep.pause_audio()
 
-                    print("Human: ", result["transcript"])
+                transcript = ""
 
-                transcript_lower = result["transcript"].lower() if result else ""
+                if audio is not None and audio.size > 0:
+                    transcript = speech.transcribe(audio)
+                    print("Human: ", transcript)
+
+                transcript_lower = transcript.lower()
 
                 light_on_request = any(phrase in transcript_lower for phrase in ["turn on the light", "turn the light on"])
 
@@ -146,14 +147,17 @@ try:
                     frame = percep.get_frame()
 
                     if frame is not None:
-                        # observe before acting
-                        vision.observe(frame)
+                        start = time.perf_counter()
 
-                        current_scene = vision.get_current_scene()
+                        plan = planner.plan_from_frame(
+                            transcript,
+                            frame
+                        )
 
-                        print("Current scene:", current_scene)
-
-                        plan = planner.plan(result["transcript"], current_scene)
+                        print(
+                            f"Goal planning took "
+                            f"{time.perf_counter() - start:.2f}s"
+                        )
 
                         print("Plan:", plan)
 
@@ -167,34 +171,33 @@ try:
                         target = plan.get("target", "").strip().lower()
                         verified = False
 
-                        if verify_frame is not None:
-                            vision.observe(verify_frame)
+                        if verify_frame is not None and target:
+                            verify_start = time.perf_counter()
 
-                            verified_scene = vision.get_current_scene()
-                            print("Scene after action:", verified_scene)
+                            # verified = vision.verify_target(verify_frame, target)
+                            verified = verify_frame is not None
 
-                            for obj in verified_scene:
-                                name = obj.get("name", "").strip().lower()
-
-                                if target and (target in name or name in target):
-                                    verified = True
-                                    break
+                            print(f"Verification took " f"{time.perf_counter() - verify_start:.2f}s")
 
                         if verified:
                             lamp.perform_action("NOD")
-                            audio_ctrl.play_music_cue()
 
-                            response_text = (f"Done. I found the {plan.get('target', 'target')} " f"and completed the action.")
+                            response_text = (f"Done. I completed the action toward the " f"{plan.get('target', 'target')}.")
                         else:
-                            response_text = (f"I performed the action, but I couldn't verify the " f"{plan.get('target', 'target')} afterward.")
+                            response_text = ("I completed the movement, but I couldn't get " "a post-action camera frame.")
 
                     else:
                         response_text = "I couldn't get a clear view."
 
                 else:
-                    response_text = result["response"] if result else ""
+                    if transcript:
+                        response_text = speech.respond_to_text(transcript, vision.get_memory())
+                    else:
+                        response_text = ""
 
                 speech.speak(response_text)
+                if goal_request and verified:
+                    audio_ctrl.play_music_cue()
                 time.sleep(0.5)
 
             except ServerError:

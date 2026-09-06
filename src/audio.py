@@ -19,11 +19,11 @@ class AudioController:
 
 
     def play_chime(self):
-        note1 = self._bell_tone(523.25, 0.45)   # C
-        note2 = self._bell_tone(659.25, 0.50)   # E
-        note3 = self._bell_tone(783.99, 0.65)   # G
+        note1 = self._bell_tone(523.25, 0.12)
+        note2 = self._bell_tone(659.25, 0.14)
+        note3 = self._bell_tone(783.99, 0.22)
 
-        gap = np.zeros(int(self.sample_rate * 0.04))
+        gap = np.zeros(int(self.sample_rate * 0.02))
 
         audio = np.concatenate([ note1, gap, note2, gap, note3])
 

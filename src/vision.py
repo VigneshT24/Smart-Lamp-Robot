@@ -29,8 +29,8 @@ class VisionAgent:
         cv2.imshow("Gemini Vision Input", frame)
         cv2.waitKey(1)
 
-        # existing encoding code
-        success, encoded = cv2.imencode(".jpg", frame)
+        frame = cv2.resize(frame, (640, 480))
+        success, encoded = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
 
         if not success:
             return None
@@ -65,6 +65,9 @@ class VisionAgent:
                     mime_type="image/jpeg",
                 ),
             ],
+            config=types.GenerateContentConfig(
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
+            ),
         )
 
         text = response.text.strip() # type: ignore
@@ -92,6 +95,46 @@ class VisionAgent:
             self.memory[name] = {**existing, **obj}
 
         return newly_added
+
+    def verify_target(self, frame, target):
+        frame = cv2.resize(frame, (320, 240))
+
+        success, encoded = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 60])
+
+        if not success:
+            return False
+
+        response = self._generate_with_retry(
+            model="gemini-3.5-flash-lite",
+            contents=[
+                f"""
+                Is the "{target}" visible in this image?
+
+                Return ONLY valid JSON:
+
+                {{
+                    "visible": true
+                }}
+                """,
+                types.Part.from_bytes(
+                    data=encoded.tobytes(),
+                    mime_type="image/jpeg"
+                ),
+            ],
+            config=types.GenerateContentConfig(
+                automatic_function_calling=
+                types.AutomaticFunctionCallingConfig(
+                    disable=True
+                )
+            ),
+        )
+
+        text = response.text.strip() # type: ignore
+        text = text.replace("```json", "").replace("```", "").strip()
+
+        result = json.loads(text)
+
+        return bool(result.get("visible", False))
 
     def get_memory(self):
         return list(self.memory.values())
