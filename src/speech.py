@@ -9,6 +9,7 @@ import numpy as np # type: ignore
 import sounddevice as sd # type: ignore
 import pyttsx3 # type: ignore
 from faster_whisper import WhisperModel # type: ignore
+from gemini_router import GeminiRouter
 
 from dotenv import load_dotenv # type: ignore
 from google import genai # type: ignore
@@ -22,7 +23,16 @@ class SpeechAgent:
         self.sample_rate = 16000
         self.threshold = 0.015
 
-        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"),
+            http_options=types.HttpOptions(
+                timeout=10000,
+                retry_options=types.HttpRetryOptions(
+                    attempts=1
+                )
+            )
+        )
+
+        self.router = GeminiRouter(self.client)
 
         print("Loading Whisper...")
 
@@ -31,16 +41,9 @@ class SpeechAgent:
         print("Whisper ready.")
 
     def _generate_with_retry(self, **kwargs):
-        for attempt in range(3):
-            try:
-                return self.client.models.generate_content(**kwargs)
+        kwargs.pop("model", None)
 
-            except ServerError as e:
-                if e.code == 503 and attempt < 2:
-                    print("Gemini busy, retrying...")
-                    time.sleep(2 ** attempt)
-                else:
-                    raise
+        return self.router.generate(**kwargs)
 
     def listen(self):
         block_size = 1024

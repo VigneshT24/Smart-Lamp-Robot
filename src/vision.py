@@ -14,16 +14,9 @@ class VisionAgent:
         self.current_scene = []
 
     def _generate_with_retry(self, **kwargs):
-        for attempt in range(3):
-            try:
-                return self.client.models.generate_content(**kwargs)
+        kwargs.pop("model", None)
 
-            except ServerError as e:
-                if e.code == 503 and attempt < 2:
-                    print("Gemini vision busy, retrying...")
-                    time.sleep(2 ** attempt)
-                else:
-                    raise
+        return self.router.generate(**kwargs)
 
     def observe(self, frame):
         cv2.imshow("Gemini Vision Input", frame)

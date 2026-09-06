@@ -36,8 +36,8 @@ LISTEN = {
 lamp = LampSimulator()
 percep = Perception()
 speech = SpeechAgent()
-vision = VisionAgent(speech.client)
-planner = GoalPlanner(speech.client)
+vision = VisionAgent(speech.router)
+planner = GoalPlanner(speech.router)
 audio_ctrl = AudioController()
 
 state = "neutral"
@@ -114,7 +114,12 @@ try:
                 goal_request = any(phrase in transcript_lower for phrase in ["look at", "look toward", "look to",
                                                                              "turn toward", "turn to", "face the"])
 
-                vision_request = any(phrase in transcript_lower for phrase in ["what do you see", "remember this", "remember that", "what is this",])
+                vision_request = any(phrase in transcript_lower for phrase in ["what do you see", "remember this", "remember that", "what is this"])
+                memory_recall_request = any(phrase in transcript_lower for phrase in ["what do you remember",
+                                                                                      "what did i show you",
+                                                                                      "what objects did i show you",
+                                                                                      "what have i shown you",
+                                                                                      "what objects do you remember",])
 
                 if light_on_request:
                     response_text = "Sure, I will turn on the light"
@@ -124,6 +129,15 @@ try:
                     response_text = "Sure, I will turn off the light"
                     lamp.set_light(False)
                     light_stay_off = True
+                elif memory_recall_request:
+                    remembered = vision.get_memory()
+
+                    if remembered:
+                        names = ", ".join(obj.get("name", "object") for obj in remembered)
+
+                        response_text = (f"I remember the {names}.")
+                    else:
+                        response_text = ("I don't remember any objects yet.")
                 elif vision_request:
                     frame = percep.get_frame()
 
@@ -149,15 +163,9 @@ try:
                     if frame is not None:
                         start = time.perf_counter()
 
-                        plan = planner.plan_from_frame(
-                            transcript,
-                            frame
-                        )
+                        plan = planner.plan_from_frame(transcript, frame)
 
-                        print(
-                            f"Goal planning took "
-                            f"{time.perf_counter() - start:.2f}s"
-                        )
+                        print(f"Goal planning took " f"{time.perf_counter() - start:.2f}s")
 
                         print("Plan:", plan)
 
