@@ -34,20 +34,52 @@ LISTEN = {
     "head_pitch_joint": -0.25,
 }
 
-lamp.set_light(False)
+lamp.move_pose(NEUTRAL, 1.0)
+time.sleep(4)
+lamp.move_pose(GREET, 1.0)
 
-lamp.move_pose(NEUTRAL, 0.5)
-time.sleep(1)
-lamp.move_pose(GREET, 0.5)
-time.sleep(1)
-lamp.move_pose(LISTEN, 0.5)
-time.sleep(1)
+try:    
+    time.sleep(4)
 
-lamp.set_light(True)
-time.sleep(2)
+    print("Testing LOOK_LEFT")
+    lamp.perform_action("LOOK_LEFT")
+    time.sleep(2)
 
-lamp.set_light(False)
-time.sleep(2)
+    print("Testing LOOK_RIGHT")
+    lamp.perform_action("LOOK_RIGHT")
+    time.sleep(2)
 
-input("Press Enter to exit...")
-lamp.close()
+    print("Testing LOOK_UPPER_RIGHT")
+    lamp.perform_action("LOOK_UPPER_RIGHT")
+    time.sleep(2)
+
+    print("Testing LOOK_UPPER_LEFT")
+    lamp.perform_action("LOOK_UPPER_LEFT")
+    time.sleep(2)
+
+    print("Testing LOOK_LOWER_RIGHT")
+    lamp.perform_action("LOOK_LOWER_RIGHT")
+    time.sleep(2)
+
+    print("Testing LOOK_LOWER_LEFT")
+    lamp.perform_action("LOOK_LOWER_LEFT")
+    time.sleep(2)
+
+    print("Testing LOOK_CENTER")
+    lamp.perform_action("LOOK_CENTER")
+    time.sleep(2)
+
+    print("Testing NOD")
+    lamp.perform_action("NOD")
+    time.sleep(2)
+
+    print("Testing LOOK_UP")
+    lamp.perform_action("LOOK_UP")
+    time.sleep(2)
+
+    print("Testing LOOK_DOWN")
+    lamp.perform_action("LOOK_DOWN")
+    time.sleep(2)
+
+finally:
+    lamp.close()

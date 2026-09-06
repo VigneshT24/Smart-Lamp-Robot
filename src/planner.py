@@ -7,7 +7,8 @@ from google.genai import types # type: ignore
 class GoalPlanner:
     ALLOWED_ACTIONS = ["LOOK_LEFT", "LOOK_RIGHT", "LOOK_CENTER",
                        "LOOK_UPPER_LEFT", "LOOK_UPPER_RIGHT",
-                       "LOOK_LOWER_LEFT", "LOOK_LOWER_RIGHT"]
+                       "LOOK_LOWER_LEFT", "LOOK_LOWER_RIGHT",
+                       "LOOK_UP", "LOOK_DOWN"]
 
     def __init__(self, router):
         self.router = router
@@ -33,7 +34,7 @@ class GoalPlanner:
             Choose a short sequence of actions that best satisfies the goal.
 
             Object locations such as left, right, or center, upper left,
-            upper right, bottom left, bottom right should determine which direction the lamp looks.
+            upper right, bottom left, bottom right, up, down should determine which direction the lamp looks.
 
             Return ONLY valid JSON:
 
@@ -96,6 +97,8 @@ class GoalPlanner:
             upper right -> LOOK_UPPER_RIGHT
             lower left -> LOOK_LOWER_LEFT
             lower right -> LOOK_LOWER_RIGHT
+            up -> LOOK_UP
+            down -> LOOK_DOWN
 
             Return ONLY valid JSON:
 

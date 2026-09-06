@@ -87,6 +87,12 @@ class LampSimulator:
         elif action == "LOOK_LOWER_LEFT":
             self.move_pose({"base_yaw_joint": 1.2, "neck_yaw_joint": -0.7, "head_pitch_joint": 0.1}, 0.6)
 
+        elif action == "LOOK_UP":
+            self.move_pose({"base_yaw_joint": 0.0, "neck_yaw_joint": 0.0, "head_pitch_joint": -0.4,}, 0.6)
+
+        elif action == "LOOK_DOWN":
+            self.move_pose({"base_yaw_joint": 0.0, "neck_yaw_joint": 0.0, "head_pitch_joint": 0.25,}, 0.6)
+
     # move multiple joints at once
     def move_pose(self, pose, seconds=1.0):
         start_positions = {}
