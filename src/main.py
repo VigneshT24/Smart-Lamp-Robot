@@ -182,7 +182,6 @@ try:
                         if verify_frame is not None and target:
                             verify_start = time.perf_counter()
 
-                            # verified = vision.verify_target(verify_frame, target)
                             verified = verify_frame is not None
 
                             print(f"Verification took " f"{time.perf_counter() - verify_start:.2f}s")

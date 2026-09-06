@@ -5,15 +5,9 @@ from google.genai.errors import ServerError # type: ignore
 from google.genai import types # type: ignore
 
 class GoalPlanner:
-    ALLOWED_ACTIONS = [
-        "LOOK_LEFT",
-        "LOOK_RIGHT",
-        "LOOK_CENTER",
-        "LOOK_UPPER_LEFT",
-        "LOOK_UPPER_RIGHT",
-        "LOOK_LOWER_LEFT",
-        "LOOK_LOWER_RIGHT"
-    ]
+    ALLOWED_ACTIONS = ["LOOK_LEFT", "LOOK_RIGHT", "LOOK_CENTER",
+                       "LOOK_UPPER_LEFT", "LOOK_UPPER_RIGHT",
+                       "LOOK_LOWER_LEFT", "LOOK_LOWER_RIGHT"]
 
     def __init__(self, router):
         self.router = router
@@ -25,38 +19,35 @@ class GoalPlanner:
 
     def plan(self, goal, scene_objects):
         prompt = f"""
-        You control an articulated desk lamp robot.
+            You control an articulated desk lamp robot.
 
-        The user gave this goal:
-        "{goal}"
+            The user gave this goal:
+            "{goal}"
 
-        Current visible objects:
-        {json.dumps(scene_objects)}
+            Current visible objects:
+            {json.dumps(scene_objects)}
 
-        You may ONLY use these actions:
-        {self.ALLOWED_ACTIONS}
+            You may ONLY use these actions:
+            {self.ALLOWED_ACTIONS}
 
-        Choose a short sequence of actions that best satisfies the goal.
+            Choose a short sequence of actions that best satisfies the goal.
 
-        Object locations such as left, right, or center, upper left,
-        upper right, bottom left, bottom right should determine which direction the lamp looks.
+            Object locations such as left, right, or center, upper left,
+            upper right, bottom left, bottom right should determine which direction the lamp looks.
 
-        Return ONLY valid JSON:
+            Return ONLY valid JSON:
 
-        {{
-            "actions": ["LOOK_LEFT"],
-            "target": "red bottle",
-            "reason": "The red bottle is on the left side of the scene."
-        }}
+            {{
+                "actions": ["LOOK_LEFT"],
+                "target": "red bottle",
+                "reason": "The red bottle is on the left side of the scene."
+            }}
 
-        Use at most 3 actions.
-        """
+            Use at most 3 actions.
+            """
 
         response = self._generate_with_retry(model="gemini-3.5-flash-lite", contents=prompt,
-            config=types.GenerateContentConfig(
-                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
-            ),
-        )
+            config=types.GenerateContentConfig(automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)))
 
         text = response.text.strip() # type: ignore
         text = text.replace("```json", "").replace("```", "").strip()
@@ -69,7 +60,7 @@ class GoalPlanner:
         return result
 
     def plan_from_frame(self, goal, frame):
-        # Small image is enough for rough object direction
+        # small image is enough for rough object direction
         frame = cv2.resize(frame, (480, 360))
 
         success, encoded = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 65])
@@ -126,23 +117,13 @@ class GoalPlanner:
                     mime_type="image/jpeg"
                 ),
             ],
-            config=types.GenerateContentConfig(
-                automatic_function_calling=
-                types.AutomaticFunctionCallingConfig(
-                    disable=True
-                )
-            ),
-        )
+            config=types.GenerateContentConfig(automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)))
 
         text = response.text.strip() # type: ignore
         text = text.replace("```json", "").replace("```", "").strip()
 
         result = json.loads(text)
 
-        result["actions"] = [
-            action
-            for action in result.get("actions", [])
-            if action in self.ALLOWED_ACTIONS
-        ]
+        result["actions"] = [action for action in result.get("actions", []) if action in self.ALLOWED_ACTIONS]
 
         return result

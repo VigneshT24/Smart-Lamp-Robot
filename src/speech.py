@@ -23,14 +23,7 @@ class SpeechAgent:
         self.sample_rate = 16000
         self.threshold = 0.015
 
-        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"),
-            http_options=types.HttpOptions(
-                timeout=10000,
-                retry_options=types.HttpRetryOptions(
-                    attempts=1
-                )
-            )
-        )
+        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"), http_options=types.HttpOptions(timeout=10000, retry_options=types.HttpRetryOptions(attempts=1)))
 
         self.router = GeminiRouter(self.client)
 
@@ -58,12 +51,7 @@ class SpeechAgent:
 
         print("Listening...")
 
-        with sd.InputStream(
-            samplerate=self.sample_rate,
-            channels=1,
-            dtype="float32",
-            blocksize=block_size,
-        ) as stream:
+        with sd.InputStream(samplerate=self.sample_rate, channels=1, dtype="float32", blocksize=block_size) as stream:
 
             for _ in range(max_blocks):
                 data, _ = stream.read(block_size)
@@ -103,14 +91,7 @@ class SpeechAgent:
     def transcribe(self, audio):
         start = time.perf_counter()
 
-        segments, _ = self.whisper.transcribe(
-            audio,
-            language="en",
-            beam_size=1,
-            best_of=1,
-            condition_on_previous_text=False,
-            vad_filter=False,
-        )
+        segments, _ = self.whisper.transcribe(audio, language="en", beam_size=1, best_of=1, condition_on_previous_text=False, vad_filter=False)
 
         transcript = " ".join(segment.text.strip() for segment in segments).strip()
 
@@ -144,14 +125,9 @@ class SpeechAgent:
                     Only include words that should be spoken aloud.
                     Do not describe movements.
                 """,
-                types.Part.from_bytes(
-                    data=audio_bytes,
-                    mime_type="audio/wav",
-                ),
+                types.Part.from_bytes(data=audio_bytes, mime_type="audio/wav"),
             ],
-            config=types.GenerateContentConfig(
-                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
-            ),
+            config=types.GenerateContentConfig(automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True))
         )
 
         text = response.text.strip() # type: ignore
@@ -162,8 +138,7 @@ class SpeechAgent:
     def respond_to_text(self, transcript, scene_memory=None):
         memory_text = json.dumps(scene_memory or [])
 
-        response = self._generate_with_retry(
-            model="gemini-3.5-flash-lite",
+        response = self._generate_with_retry(model="gemini-3.5-flash-lite",
             contents=f"""
             You are an expressive desk lamp character.
 
@@ -183,13 +158,7 @@ class SpeechAgent:
             Respond in 1-2 short sentences.
             Only return words that should be spoken aloud.
             """,
-            config=types.GenerateContentConfig(
-                automatic_function_calling=
-                types.AutomaticFunctionCallingConfig(
-                    disable=True
-                )
-            ),
-        )
+            config=types.GenerateContentConfig(automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)))
 
         return response.text.strip() # type: ignore
 

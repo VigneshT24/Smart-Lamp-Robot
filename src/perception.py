@@ -41,7 +41,6 @@ class Perception:
 
         self.audio_level = float(np.sqrt(np.mean(chunk ** 2)))
 
-        # always keep the most recent ~1 second
         self.audio_buffer.append(chunk)
 
         if self.audio_level > self.threshold:

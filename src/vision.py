@@ -1,6 +1,5 @@
 import json
 import cv2 # type: ignore
-import time
 
 from google.genai.errors import ServerError # type: ignore
 from google import genai
@@ -8,14 +7,13 @@ from google.genai import types # type: ignore
 
 
 class VisionAgent:
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, router):
+        self.router = router
         self.memory = {}
         self.current_scene = []
 
     def _generate_with_retry(self, **kwargs):
         kwargs.pop("model", None)
-
         return self.router.generate(**kwargs)
 
     def observe(self, frame):
@@ -60,7 +58,7 @@ class VisionAgent:
             ],
             config=types.GenerateContentConfig(
                 automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
-            ),
+            )
         )
 
         text = response.text.strip() # type: ignore
@@ -119,7 +117,7 @@ class VisionAgent:
                 types.AutomaticFunctionCallingConfig(
                     disable=True
                 )
-            ),
+            )
         )
 
         text = response.text.strip() # type: ignore
