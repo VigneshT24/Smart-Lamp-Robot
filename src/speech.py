@@ -22,8 +22,12 @@ class SpeechAgent:
     def __init__(self):
         self.sample_rate = 16000
         self.threshold = 0.015
+        api_key = os.getenv("GEMINI_API_KEY")
 
-        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"), http_options=types.HttpOptions(timeout=10000, retry_options=types.HttpRetryOptions(attempts=1)))
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY is not set. Copy .env.example to .env and add your Gemini API key.")
+
+        self.client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=10000, retry_options=types.HttpRetryOptions(attempts=1)))
 
         self.router = GeminiRouter(self.client)
 
