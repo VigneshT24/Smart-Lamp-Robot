@@ -8,12 +8,12 @@ The design intentionally uses a **hybrid local/cloud architecture**: latency-sen
 
 The lamp supports one continuous interaction containing:
 
-- **Engagement / disengagement** - detects a frontal face as a proxy for attention, greets after several confirmed frames, and returns to neutral after attention has been absent for approximately 2 seconds.
+- **Engagement/disengagement** - detects a frontal face as a proxy for attention, greets after several confirmed frames, and returns to neutral after attention has been absent for approximately 2 seconds.
 - **Character response** - coordinated pose changes, light state, synthesized greeting chime, speech, nodding, and a completion music cue.
 - **Spoken interaction** - microphone input is transcribed locally with Faster-Whisper and responses are spoken using local TTS.
-- **Scene memory** - a camera frame is analyzed and useful object information such as name, color, location, and description is stored locally for later questions.
+- **Scene memory** - a camera frame is analyzed, and useful object information such as name, color, location, and description is stored locally for later questions.
 - **Goal-directed action** - a spoken request such as "look at the apple" is combined with a fresh camera image. A multimodal model selects a constrained semantic lamp action, which is then executed by deterministic robot control.
-- **Post-action observation** - a new camera frame is captured after the action before the goal is completed.
+- **Post-action observation** - a new camera frame is captured after the action, before the goal is completed.
 
 Across the interaction, motion, light, voice, a sound effect, and music all have purposeful roles rather than being independent demonstrations.
 
@@ -299,7 +299,7 @@ Intentionally left out to keep the system focused:
 ## Project Structure
 
 ```text
-hcl-lamp/
+smart-lamp/
 ├── robot/
 │   ├── assets/
 │   └── dummy_lamp_5dof.urdf
