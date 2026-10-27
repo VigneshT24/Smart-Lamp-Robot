@@ -5,6 +5,7 @@ from google.genai.errors import ServerError # type: ignore
 from google import genai
 from google.genai import types # type: ignore
 
+# vision
 
 class VisionAgent:
     def __init__(self, router):

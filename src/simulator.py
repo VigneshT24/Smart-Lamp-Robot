@@ -4,6 +4,7 @@ import time
 import mujoco as m # type: ignore
 import mujoco.viewer # type: ignore
 
+# simulator
 
 class LampSimulator:
     def __init__(self):

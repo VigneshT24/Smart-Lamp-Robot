@@ -4,6 +4,8 @@ import cv2 # type: ignore
 from google.genai.errors import ServerError # type: ignore
 from google.genai import types # type: ignore
 
+# planner
+
 class GoalPlanner:
     ALLOWED_ACTIONS = ["LOOK_LEFT", "LOOK_RIGHT", "LOOK_CENTER",
                        "LOOK_UPPER_LEFT", "LOOK_UPPER_RIGHT",

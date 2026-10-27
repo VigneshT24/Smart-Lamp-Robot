@@ -10,6 +10,8 @@ import time
 
 lamp = LampSimulator()
 
+# test motion
+
 NEUTRAL = {
     "base_yaw_joint": 0.0,
     "shoulder_pitch_joint": 0.15,
