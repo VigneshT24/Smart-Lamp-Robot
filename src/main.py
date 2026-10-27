@@ -1,5 +1,6 @@
 import time 
 import json
+import os
 from google.genai.errors import ServerError # type: ignore
 
 from simulator import LampSimulator
@@ -41,6 +42,12 @@ planner = GoalPlanner(speech.router)
 audio_ctrl = AudioController()
 
 state = "neutral"
+
+DEMO_MODE = 0 and os.getenv("LAMP_DEMO_MODE", "0") == "1"
+demo_memory = {}
+
+if DEMO_MODE:
+    print("SCRIPTED DEMO MODE ACTIVE — Gemini requests will be bypassed")
 
 lamp.move_pose(NEUTRAL, 0.5)
 
@@ -106,6 +113,7 @@ try:
                     print("Human: ", transcript)
 
                 transcript_lower = transcript.lower()
+                verified = False
 
                 light_on_request = any(phrase in transcript_lower for phrase in ["turn on the light", "turn the light on"])
 
@@ -138,6 +146,54 @@ try:
                         response_text = (f"I remember the {names}.")
                     else:
                         response_text = ("I don't remember any objects yet.")
+                elif DEMO_MODE and "how are you" in transcript_lower:
+                    response_text = (
+                        "I'm doing great! It's nice to see you again."
+                    )
+
+                elif DEMO_MODE and "remember this" in transcript_lower:
+                    # Scripted prop for the portfolio recording.
+                    demo_memory["smartphone"] = {
+                        "name": "smartphone",
+                        "color": "black",
+                        "location": "left",
+                    }
+
+                    response_text = (
+                        "Got it! I'll remember the black smartphone."
+                    )
+
+                elif DEMO_MODE and (
+                    "what color" in transcript_lower
+                    or "what do you remember" in transcript_lower
+                ):
+                    if "smartphone" in demo_memory:
+                        response_text = (
+                            "I remember a black smartphone on the left."
+                        )
+                    else:
+                        response_text = (
+                            "You haven't asked me to remember anything yet."
+                        )
+
+                elif DEMO_MODE and goal_request and "smartphone" in transcript_lower:
+                    # Scripted goal decision; actual MuJoCo movement is live.
+                    print("DEMO: scripted semantic action LOOK_LEFT")
+
+                    lamp.perform_action("LOOK_LEFT")
+                    lamp.perform_action("NOD")
+
+                    verified = True
+                    response_text = (
+                        "Done! I'm looking toward the black smartphone."
+                    )
+
+                elif DEMO_MODE:
+                    # Do not accidentally send unrecognized commands to Gemini.
+                    response_text = (
+                        "I can remember the black smartphone, answer questions "
+                        "about it, and look toward it."
+                    )
                 elif vision_request:
                     frame = percep.get_frame()
 

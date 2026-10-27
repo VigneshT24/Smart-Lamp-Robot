@@ -29,7 +29,6 @@ class VisionAgent:
         image_bytes = encoded.tobytes()
 
         response = self._generate_with_retry(
-            model="gemini-3.5-flash-lite",
             contents=[
                 """
                     Look at this scene.
@@ -56,7 +55,7 @@ class VisionAgent:
                     mime_type="image/jpeg",
                 ),
             ],
-            config=types.GenerateContentConfig(
+            config=types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_level="low"),
                 automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
             )
         )
@@ -96,7 +95,6 @@ class VisionAgent:
             return False
 
         response = self._generate_with_retry(
-            model="gemini-3.5-flash-lite",
             contents=[
                 f"""
                 Is the "{target}" visible in this image?
@@ -112,7 +110,7 @@ class VisionAgent:
                     mime_type="image/jpeg"
                 ),
             ],
-            config=types.GenerateContentConfig(
+            config=types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_level="low"), 
                 automatic_function_calling=
                 types.AutomaticFunctionCallingConfig(
                     disable=True

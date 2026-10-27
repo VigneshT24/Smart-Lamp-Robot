@@ -22,12 +22,13 @@ class SpeechAgent:
     def __init__(self):
         self.sample_rate = 16000
         self.threshold = 0.015
+
         api_key = os.getenv("GEMINI_API_KEY")
 
         if not api_key:
             raise RuntimeError("GEMINI_API_KEY is not set. Copy .env.example to .env and add your Gemini API key.")
-
-        self.client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=10000, retry_options=types.HttpRetryOptions(attempts=1)))
+        
+        self.client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=30000, retry_options=types.HttpRetryOptions(attempts=2)))
 
         self.router = GeminiRouter(self.client)
 
@@ -107,7 +108,6 @@ class SpeechAgent:
         memory_text = json.dumps(scene_memory or [])
 
         response = self._generate_with_retry(
-            model="gemini-3.5-flash-lite",
             contents=[
                 f"""
                     Listen to the person speaking.
@@ -131,7 +131,7 @@ class SpeechAgent:
                 """,
                 types.Part.from_bytes(data=audio_bytes, mime_type="audio/wav"),
             ],
-            config=types.GenerateContentConfig(automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True))
+            config=types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_level="low"), automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True))
         )
 
         text = response.text.strip() # type: ignore
@@ -142,7 +142,7 @@ class SpeechAgent:
     def respond_to_text(self, transcript, scene_memory=None):
         memory_text = json.dumps(scene_memory or [])
 
-        response = self._generate_with_retry(model="gemini-3.5-flash-lite",
+        response = self._generate_with_retry(
             contents=f"""
             You are an expressive desk lamp character.
 
@@ -162,7 +162,7 @@ class SpeechAgent:
             Respond in 1-2 short sentences.
             Only return words that should be spoken aloud.
             """,
-            config=types.GenerateContentConfig(automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)))
+            config=types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_level="low"), automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)))
 
         return response.text.strip() # type: ignore
 

@@ -47,8 +47,8 @@ class GoalPlanner:
             Use at most 3 actions.
             """
 
-        response = self._generate_with_retry(model="gemini-3.5-flash-lite", contents=prompt,
-            config=types.GenerateContentConfig(automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)))
+        response = self._generate_with_retry(contents=prompt,
+            config=types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_level="low"), automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)))
 
         text = response.text.strip() # type: ignore
         text = text.replace("```json", "").replace("```", "").strip()
@@ -112,7 +112,6 @@ class GoalPlanner:
         """
 
         response = self._generate_with_retry(
-            model="gemini-3.5-flash-lite",
             contents=[
                 prompt,
                 types.Part.from_bytes(
@@ -120,7 +119,7 @@ class GoalPlanner:
                     mime_type="image/jpeg"
                 ),
             ],
-            config=types.GenerateContentConfig(automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)))
+            config=types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_level="low"), automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)))
 
         text = response.text.strip() # type: ignore
         text = text.replace("```json", "").replace("```", "").strip()
